@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <http:listener-config name="salesforce_integration-httpListenerConfig">
+        <http:listener-connection host="${http.host}" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="salesforce_integration-config" api="salesforce_integration.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="1d50348a-980d-42ed-8430-72073f732052" >
+		<salesforce:basic-connection username="${salesforce.username}" password="Mozu&amp;@8243" securityToken="${salesforce.security_token}" />
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="947119cf-061a-4112-a7bf-e29bb56e25a1" file="config.yaml" />
+	<configuration doc:name="Configuration" doc:id="ae8804eb-688c-42e5-8df7-cc3289963180" defaultErrorHandler-ref="error-handlerError_Handler" />
+	<flow name="salesforce_integration-main">
+        <http:listener config-ref="salesforce_integration-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="salesforce_integration-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="salesforce_integration-console">
+        <http:listener config-ref="salesforce_integration-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="salesforce_integration-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\accounts\(id):salesforce_integration-config">
+        <set-variable value="#[payload]" doc:name="Storing the input payload for request framing for salesforce" doc:id="865577c6-9468-4b6c-aaa3-ea2729cf8331" variableName="requestPayload" />
+        <ee:transform doc:name="fetching uri params" doc:id="b27cce6e-f67b-4b88-803e-33293545ace5" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="id" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:query doc:name="Query" doc:id="e860116e-c1a2-450f-96fe-173dc367889f" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Account__c WHERE CUSTOMER_ID__c=':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="transform response from salesforce" doc:id="2149822e-c5ec-4d26-922c-853a4f23ca83" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) ->
+	{
+		"Id" : payload.Id,
+		"requestPayload": vars.requestPayload
+	}
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="request framing for salesforce update operation" doc:id="bdf22a15-cd8d-49dc-9b71-60490d45f89d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) ->
+	{
+		"Id" : item.Id reduce $,
+		"CUSTOMER_ID__c" : item.requestPayload.CUSTOMERS.CUSTOMER.CUSTOMER_ID reduce $,
+		"CUSTOMER_NAME__c" : item.requestPayload.CUSTOMERS.CUSTOMER.CUSTOMER_NAME reduce $,
+		"ADDRESS1__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.ADDRESS1) reduce $) reduce $,
+		"ADDRESS2__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.ADDRESS2) reduce $) reduce $,
+		"POSTALCODE__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.POSTALCODE) reduce $) reduce $,
+    	"CITY__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.CITY) reduce $) reduce $,
+    	"Phone__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.Phone) reduce $) reduce $,
+		
+	}
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:update type="Account__c" doc:name="Update" doc:id="1f96e7e2-98c8-46c7-a792-53322ac86461" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="47050433-dadf-4c15-9a48-470f79d5ac07" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  "Message" : "Account/Contact updation is successful.",
+  "Account Updation status" : payload.successful
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+    <flow name="put:\contacts\(id):salesforce_integration-config">
+		<set-variable value="#[payload]" doc:name="Storing the input payload for request framing for salesforce" doc:id="5926c290-8c72-4c2b-a6e6-e8aec94e5db0" variableName="requestPayload"/>
+		<ee:transform doc:id="6c89882b-2017-4883-a4b6-f7c77bc8e923" doc:name="fetching uri params">
+            <ee:variables>
+                <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+		<salesforce:query doc:name="Query" doc:id="708868e8-182c-474d-8ee2-3734deb82aad" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Contact__c WHERE CUSTOMER_ID__c=':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="transform response from salesforce" doc:id="49346253-78f6-4f7d-9a1a-5f84cb4764f6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) ->
+	{
+		"Id" : payload.Id,
+		"requestPayload": vars.requestPayload
+	}
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="request framing for salesforce update operation" doc:id="c4319d53-0295-48e2-9d38-f414690d605f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ((item, index) ->
+	{
+		"Id" : item.Id reduce $,
+		"CUSTOMER_ID__c" : item.requestPayload.CUSTOMERS.CUSTOMER.CUSTOMER_ID reduce $,
+		"CUSTOMER_NAME__c" : item.requestPayload.CUSTOMERS.CUSTOMER.CUSTOMER_NAME reduce $,
+		"ADDRESS1__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.ADDRESS1) reduce $) reduce $,
+		"ADDRESS2__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.ADDRESS2) reduce $) reduce $,
+		"POSTALCODE__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.POSTALCODE) reduce $) reduce $,
+    	"CITY__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.CITY) reduce $) reduce $,
+    	"Phone__c" : (item.requestPayload.CUSTOMERS.CONTACTS map ((item, index) -> item.Phone) reduce $) reduce $,
+		
+	}
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:update doc:name="Update" doc:id="b078b4a6-b781-44f4-b1c2-3e947c1587dc" config-ref="Salesforce_Config" type="Contact__c"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Account/Contact updation is successful.",
+  "Contact Updation status" : payload.successful
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\accounts\(id):salesforce_integration-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="id">attributes.uriParams.'id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <salesforce:query doc:name="Query salesforce account Id for particular record" doc:id="225d6620-ed56-4b44-a11a-b0e62a3ef8cf" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Account__c WHERE CUSTOMER_ID__c=':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<salesforce:delete doc:name="Delete record based on salesforce Id" doc:id="d65973ac-2dc6-43fc-a056-3d24f087132f" config-ref="Salesforce_Config">
+			<salesforce:ids ><![CDATA[#[payload.Id]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Deletion of account/contacts is successful",
+  "Account Deletion status" : payload.successful
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\contacts\(id):salesforce_integration-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="id">attributes.uriParams.'id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <salesforce:query doc:name="Query salesforce contact Id for particular record" doc:id="59c545d3-da9a-45a3-9b21-f2b806cfee87" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id FROM Contact__c WHERE CUSTOMER_ID__c=':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<salesforce:delete doc:name="Delete record based on salesforce Id" doc:id="df99418e-f302-4752-acb4-648fb20f7a5d" config-ref="Salesforce_Config">
+			<salesforce:ids ><![CDATA[#[payload.Id]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Deletion of account/contacts is successful",
+  "Contact deletion status" : payload.successful
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\accounts:salesforce_integration-config">
+		<salesforce:query doc:name="GET account details based on name" doc:id="d644c563-1fe9-4b50-8368-6409f8277570" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT ADDRESS1__c,ADDRESS2__c,CITY__c,CUSTOMER_ID__c,CUSTOMER_NAME__c,Phone__c,POSTALCODE__c FROM Account__c WHERE CUSTOMER_NAME__c = ':name']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	name : attributes.queryParams.name
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Fetching account/contacts data is successful.",
+  "Response" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\contacts:salesforce_integration-config">
+        <salesforce:query doc:name="GET contact details based on name" doc:id="10240378-8940-41b2-8015-cbd79943eace" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT ADDRESS1__c,ADDRESS2__c,CITY__c,CUSTOMER_ID__c,CUSTOMER_NAME__c,Phone__c,POSTALCODE__c FROM Account__c WHERE CUSTOMER_NAME__c = ':name']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	name : attributes.queryParams.name
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  "Message": "Fetching account/contacts data is successful.",
+  "Response" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\contacts\(id):salesforce_integration-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="id">attributes.uriParams.'id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <salesforce:query doc:name="Query contacts based on ID" doc:id="0798c4c8-5e94-4ace-8a3e-449c3d2c1f66" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT ADDRESS1__c,ADDRESS2__c,CITY__c,CUSTOMER_ID__c,CUSTOMER_NAME__c,Phone__c,POSTALCODE__c FROM Contact__c WHERE CUSTOMER_ID__c =':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Fetching account/contacts data is successful.",
+  "Response" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\accounts\(id):salesforce_integration-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="id">attributes.uriParams.'id'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <salesforce:query doc:name="Query accounts based on ID" doc:id="8ce3f582-6d8d-46ca-b61b-9770da706d31" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT ADDRESS1__c,ADDRESS2__c,CITY__c,CUSTOMER_ID__c,CUSTOMER_NAME__c,Phone__c,POSTALCODE__c FROM Account__c WHERE CUSTOMER_ID__c =':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	id : vars.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+  Message: "Fetching account/contacts data is successful.",
+  "Response" : payload
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\accounts:salesforce_integration-config">
+		<ee:transform doc:name="Transforming payload to type java" doc:id="08afa5d1-07bf-4cd7-8f7a-6b6cc954d106" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.CUSTOMERS map ((item, index) ->
+{
+    "CUSTOMER_ID__c" : item.CUSTOMER.CUSTOMER_ID,
+    "CUSTOMER_NAME__c" : item.CUSTOMER.CUSTOMER_NAME,
+    "ADDRESS1__c" : item.CONTACTS.ADDRESS1 reduce $,
+    "ADDRESS2__c" : item.CONTACTS.ADDRESS2 reduce $,
+    "POSTALCODE__c" : item.CONTACTS.POSTALCODE reduce $,
+    "CITY__c" : item.CONTACTS.CITY reduce $,
+    "Phone__c" : item.CONTACTS.Phone reduce $
+} )]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create" doc:id="ac563783-861c-4b78-b806-edc0cda99350" config-ref="Salesforce_Config" type="Account__c">
+		</salesforce:create>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{	
+  "Message" : "Account/Contact creation is successful.",
+  "Account Creation status" : payload.successful
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\contacts:salesforce_integration-config">
+        <ee:transform doc:name="transforming payload to type java" doc:id="b5fec3a8-6dad-4d29-a665-637bad8cc1b8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.CUSTOMERS map ((item, index) ->
+{
+    "CUSTOMER_ID__c" : item.CUSTOMER.CUSTOMER_ID,
+    "CUSTOMER_NAME__c" : item.CUSTOMER.CUSTOMER_NAME,
+    "ADDRESS1__c" : item.CONTACTS.ADDRESS1 reduce $,
+    "ADDRESS2__c" : item.CONTACTS.ADDRESS2 reduce $,
+    "POSTALCODE__c" : item.CONTACTS.POSTALCODE reduce $,
+    "CITY__c" : item.CONTACTS.CITY reduce $,
+    "Phone__c" : item.CONTACTS.Phone reduce $
+} )]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create" doc:id="ea4dc7b9-ef84-44f7-b1ad-eae4e6fffc0a" config-ref="Salesforce_Config" type="Contact__c"/>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+skipNullOn="everywhere"
+---
+{
+	"Message" : "Account/Contact creation is successful.",
+	"Contact Creation status" : payload.successful,
+	
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

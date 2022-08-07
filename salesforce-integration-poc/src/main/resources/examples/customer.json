@@ -1,0 +1,19 @@
+{
+   "CUSTOMERS":[
+      {
+         "CUSTOMER":{
+            "CUSTOMER_ID":"1520026",
+            "CUSTOMER_NAME":"Koushik Chatterjee"
+         },
+         "CONTACTS":[
+            {
+               "ADDRESS1":"Flat C1/2,Block C",
+               "ADDRESS2":"Prakriti Green, Shankarpur",
+               "POSTALCODE":"713212",
+               "CITY":"Durgapur",
+               "Phone":"8343823149"
+            }
+         ]
+      }]      
+}
+

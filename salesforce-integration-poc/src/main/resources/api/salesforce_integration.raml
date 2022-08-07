@@ -1,0 +1,93 @@
+#%RAML 1.0
+title: Salesforce_Integration
+protocols: [HTTP, HTTPS]
+
+/accounts:
+  get:
+    queryParameters:
+      name: string
+    responses:
+      200:
+       body:
+        application/json:
+         example: !include Responses/get_Account_response.json
+
+  post:
+   responses:
+    200:
+     body:
+      application/json:
+       example: !include Responses//post_Account_response.json
+  
+  /{id}:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Responses/get_Account_response.json
+
+    put:
+     responses:
+      200:
+       body:
+         application/json:
+           example: !include Responses/put_Account_response.json
+
+    delete:
+     responses:
+      200:
+        body:
+         application/json:
+            example: !include Responses/delete_Account_response.json
+
+
+/contacts:
+  get:
+    queryParameters:
+      name: string
+    responses:
+      200:
+       body:
+        application/json:
+         example: !include Responses/get_Account_response.json
+
+  post:
+   responses:
+    200:
+     body:
+      application/json:
+       example: !include Responses//post_Account_response.json
+  
+  /{id}:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Responses/get_Account_response.json
+
+    put:
+     responses:
+      200:
+       body:
+         application/json:
+           example: !include Responses/put_Account_response.json
+
+    delete:
+     responses:
+      200:
+        body:
+         application/json:
+            example: !include Responses/delete_Account_response.json
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+         
+                                                                                      
+    

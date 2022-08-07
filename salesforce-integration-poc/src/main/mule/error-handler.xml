@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<error-handler name="error-handlerError_Handler" doc:id="1ec57bd8-3224-4629-b94c-5b28a210400d" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9b421619-46b3-4d61-a733-0b2bcf122a52" type="SALESFORCE:INVALID_INPUT">
+			<set-payload value='#[output application/json&#10;---&#10;{&#10;	"Status" : "Incorrect Request field format",&#10;	"Message": "Please check the fields in the input request"&#10;}]' doc:name="Set Payload" doc:id="3cce4f78-753d-402d-8d77-27a361a81ee3" />
+		</on-error-propagate>
+	</error-handler>
+</mule>
